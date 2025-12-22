@@ -29,3 +29,6 @@ Under _Configure Settings_ you can configure whether the players can see NPC and
 
 ## License
 This Foundry VTT module is licensed under the MIT license.
+
+## Inspiration
+This module was inspired by the _Party Resources_ module.
