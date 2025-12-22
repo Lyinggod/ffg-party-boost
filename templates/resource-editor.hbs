@@ -1,0 +1,30 @@
+<form class="ffg-resource-editor">
+    
+    {{!-- Dice Section --}}
+    <div class="section-header">{{localize "FFGPartyBoost.Editor.Headers.Dice"}}</div>
+    {{#each dice as |d key|}}
+    <div class="resource-row">
+        <span class="die-label">{{{d.labelHtml}}} <span style="font-size:14px; color:#333">{{d.name}}</span></span>
+        <div class="controls">
+            <button type="button" data-action="decrease" data-key="{{key}}"><i class="fas fa-minus"></i></button>
+            <span class="value">{{d.value}}</span>
+            <button type="button" data-action="increase" data-key="{{key}}"><i class="fas fa-plus"></i></button>
+        </div>
+    </div>
+    {{/each}}
+
+    {{!-- Symbols Section --}}
+    <div class="section-header">{{localize "FFGPartyBoost.Editor.Headers.Symbols"}}</div>
+    {{#each symbols as |s key|}}
+    <div class="resource-row">
+        <span class="die-label">{{{s.labelHtml}}} <span style="font-size:14px; color:#333">{{s.name}}</span></span>
+        <div class="controls">
+            <button type="button" data-action="decrease" data-key="{{key}}"><i class="fas fa-minus"></i></button>
+            <span class="value">{{s.value}}</span>
+            <button type="button" data-action="increase" data-key="{{key}}"><i class="fas fa-plus"></i></button>
+        </div>
+    </div>
+    {{/each}}
+
+    <button type="submit"><i class="fas fa-check"></i> {{localize "FFGPartyBoost.Editor.Apply"}}</button>
+</form>

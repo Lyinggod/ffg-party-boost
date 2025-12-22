@@ -1,0 +1,77 @@
+<form class="ffg-actor-selector">
+    <div class="scrollable" style="max-height: 400px; overflow-y: auto;">
+        
+        {{!-- Render Players Group (Always Open) --}}
+        {{#with groups.players}}
+            {{#if this.actors.length}}
+            <div class="actor-group">
+                <div class="group-header">{{this.label}}</div>
+                {{#each this.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+        {{/with}}
+        
+        {{!-- Render Nemesis Group (Collapsible) --}}
+        {{#with groups.nemesis}}
+            {{#if this.actors.length}}
+            <details class="actor-group"><summary class="group-header">{{this.label}}</summary>
+                {{#each this.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </details>
+            {{/if}}
+        {{/with}}
+
+        {{!-- Render Rival Group (Collapsible) --}}
+        {{#with groups.rival}}
+            {{#if this.actors.length}}
+            <details class="actor-group"><summary class="group-header">{{this.label}}</summary>
+                {{#each this.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </details>
+            {{/if}}
+        {{/with}}
+        
+        {{!-- Render Minion Group (Collapsible) --}}
+        {{#with groups.minion}}
+            {{#if this.actors.length}}
+            <details class="actor-group"><summary class="group-header">{{this.label}}</summary>
+                {{#each this.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </details>
+            {{/if}}
+        {{/with}}
+        
+        {{!-- Render Vehicle Group (Collapsible) --}}
+        {{#with groups.vehicle}}
+            {{#if this.actors.length}}
+            <details class="actor-group"><summary class="group-header">{{this.label}}</summary>
+                {{#each this.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </details>
+            {{/if}}
+        {{/with}}
+        
+    </div>
+    <button type="submit"><i class="fas fa-save"></i> {{localize "FFGPartyBoost.Selector.Save"}}</button>
+</form>

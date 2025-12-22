@@ -1,0 +1,70 @@
+{
+  "FFGPartyBoost": {
+    "Settings": {
+      "BarPosition": {
+        "Name": "Bonus Bar Position",
+        "Hint": "Select where the bonus bar appears on the screen.",
+        "Top": "Top",
+        "Bottom": "Bottom"
+      },
+      "ShowNPC": {
+        "Name": "Show NPC Bonuses",
+        "Hint": "Show NPC bonuses to players. If checked, the images and the bonus for actors that are not of type 'character' will not be seen by the players."
+      },
+      "DiceVisibility": {
+        "Name": "Configure Editor Dice",
+        "Hint": "Select which dice and symbols should be available to add in the bonus editor dialog.",
+        "Label": "Configure Visible Dice"
+      },
+      "DiceSelector": {
+        "Title": "Configure Available Bonuses",
+        "Header": "Select which dice/symbols can be passed to actors."
+      }
+    },
+    "Bar": {
+      "Configure": "Configure Bar"
+    },
+    "Selector": {
+      "Title": "Configure Bonus Bar Actors",
+      "Save": "Save",
+      "Groups": {
+        "Players": "Players",
+        "Nemesis": "Nemesis",
+        "Rival": "Rival",
+        "Minion": "Minions",
+        "Vehicle": "Vehicles"
+      }
+    },
+    "Editor": {
+      "Title": "Edit Bonus Resources: {name}",
+      "Headers": {
+        "Dice": "Dice",
+        "Symbols": "Symbols"
+      },
+      "Apply": "Apply Bonuses",
+      "Dice": {
+        "Boost": "Boost",
+        "Setback": "Setback",
+        "Ability": "Ability",
+        "Difficulty": "Difficulty",
+        "Proficiency": "Proficiency",
+        "Challenge": "Challenge",
+        "UpgradeSkill": "Upgrade Skill",
+        "UpgradeDifficulty": "Upgrade Difficulty"
+      },
+      "Symbols": {
+        "Success": "Success",
+        "Failure": "Failure",
+        "Advantage": "Advantage",
+        "Threat": "Threat",
+        "Triumph": "Triumph",
+        "Despair": "Despair"
+      }
+    },
+    "Notifications": {
+      "Applied": "Added Bonus Resources to {name}'s roll.",
+      "Init": "FFG Party Boosts | Initializing Bonus Bar...",
+      "ErrorRef": "FFG Party Boosts | Could not find RollBuilderFFG. Boosts will not apply."
+    }
+  }
+}
