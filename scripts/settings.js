@@ -51,6 +51,16 @@ export function registerSettings() {
         }
     });
 
+    // NEW: Setting to allow players to pass bonuses
+    game.settings.register(MODULE_ID, "playersCanPassBonuses", {
+        name: "FFGPartyBoost.Settings.PlayersPassBonuses.Name",
+        hint: "FFGPartyBoost.Settings.PlayersPassBonuses.Hint",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+    });
+
     // 3. The Data Store (Hidden)
     game.settings.register(MODULE_ID, "trackedActors", {
         scope: "world",
@@ -74,6 +84,14 @@ export function registerSettings() {
 
     // 5. The Dice Visibility Data Store (Hidden)
     game.settings.register(MODULE_ID, "editorVisibleDice", {
+        scope: "world",
+        config: false,
+        type: Object,
+        default: ALL_BONUS_TYPES,
+    });
+
+    // NEW: The PC Dice Visibility Data Store (Hidden)
+    game.settings.register(MODULE_ID, "pcVisibleDice", {
         scope: "world",
         config: false,
         type: Object,
