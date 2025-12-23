@@ -20,13 +20,6 @@ Under _Configure Settings_ you can configure whether the players can see NPC and
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/configure-available-bonuses.png" width="300"/>
 
-## Installation
-
-1.  Inside Foundry VTT, go to the "Add-on Modules" tab in the Configuration and Setup screen.
-2.  Click "Install Module".
-3.  Search for "FFG Party Boost" and click "Install".
-4.  Activate the module in your game world's module settings.
-
 ## License
 This Foundry VTT module is licensed under the MIT license.
 
