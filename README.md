@@ -6,7 +6,7 @@ A "bonus" bar shows the token image (or, if missing, the main image) and the ass
 
 If a PC rolls, all the bonuses passed to them plus any general bonuses for their side (aka "the player that rolls") will have those values assigned to the dice roller dialog. Clicking "Roll" removes all assigned bonuses. The same applies for NPCs.
 
-Bonuses are tracked per scene. Clicking the "+" allows for actors to be added to the bonus bar from the token on the canvas or actors in the sidebar. The _eye_ icon will hide that actor from the player view.
+Bonuses are tracked per scene. Clicking the "+" will allows bonuses to be transfered from another scene or actors may be added to the bonus bar from the tokens on the canvas or actors in the sidebar. The _eye_ icon will hide that actor from the player view.
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/select-actors-dialog.png" width="300"/>
 
