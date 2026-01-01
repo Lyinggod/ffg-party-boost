@@ -8,6 +8,8 @@ If a PC rolls, all the bonuses passed to them plus any general bonuses for their
 
 Bonuses are tracked per scene. Clicking the "+" will allows bonuses to be transfered from another scene or actors may be added to the bonus bar from the tokens on the canvas or actors in the sidebar. The _eye_ icon will hide that actor from the player view.
 
+Hovering over the image in the bonus bar will show the tokens name. **Note**: it is recommended to use the module _Token Mold_ or any module that generates unique names to non-unique differentiate minions or rivals
+
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/select-actors-dialog.png" width="300"/>
 
 Clicking on the actor image will show a dialog with available bonuses. GMs may increase a decrease a bonus amount. Players may only add bonuses, not remove them. If a bonus is currently 1, the player need enter the number to be increased by.
