@@ -1,0 +1,39 @@
+<div id="ffg-bonus-bar" class="{{position}} {{#if playersCanPass}}players-can-pass{{/if}}">
+    <div class="ffg-bar-actor-list">
+        {{#each actors}}
+            {{#if this.shouldRender}}
+            <div class="ffg-bar-item" data-actor-id="{{this.id}}">
+                
+                {{#if this.isGeneric}}
+                    {{!-- Generic Text Label --}}
+                    <div class="generic-label"
+                         data-tooltip="{{this.name}}" 
+                         data-tooltip-direction="{{../tooltipDirection}}">
+                         {{this.name}}
+                    </div>
+                {{else}}
+                    {{!-- Token Image --}}
+                    <img src="{{this.img}}" class="token-image" 
+                         data-tooltip="{{this.name}}" 
+                         data-tooltip-direction="{{../tooltipDirection}}">
+                {{/if}}
+
+                {{!-- Resources --}}
+                {{#each this.resources as |res|}}
+                    <div class="die-wrapper">
+                        <span class="dietype {{res.type}} {{res.cssClass}}">{{res.char}}</span>
+                        <span class="die-value">{{res.value}}</span>
+                    </div>
+                {{/each}}
+                
+            </div>
+            {{/if}}
+        {{/each}}
+    </div>
+
+    {{#if isGM}}
+    <button class="config-btn" data-action="configure" data-tooltip="{{localize 'FFGPartyBoost.Bar.Configure'}}">
+        <i class="fas fa-plus"></i>
+    </button>
+    {{/if}}
+</div>

@@ -11,6 +11,10 @@
         "Name": "Show NPC Bonuses",
         "Hint": "Show NPC bonuses to players. If checked, the images and the bonus for actors that are not of type 'character' will not be seen by the players."
       },
+      "PlayersPassBonuses": {
+        "Name": "Players Pass Bonuses",
+        "Hint": "Allow players to pass bonuses to other players by clicking their token in the bonus bar."
+      },
       "DiceVisibility": {
         "Name": "Configure Editor Dice",
         "Hint": "Select which dice and symbols should be available to add in the bonus editor dialog.",
@@ -18,7 +22,8 @@
       },
       "DiceSelector": {
         "Title": "Configure Available Bonuses",
-        "Header": "Select which dice/symbols can be passed to actors."
+        "Header": "Select which dice/symbols can be passed to actors.",
+        "HideFromPC": "Hide from PC"
       }
     },
     "Bar": {

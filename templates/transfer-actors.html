@@ -1,0 +1,20 @@
+<form>
+    <div class="form-group">
+        <label>Transfer From Scene</label>
+        <select name="sceneId" style="width: 100%;">
+            <option value="">Select a Scene</option>
+            {{#each scenes as |scene|}}
+            <option value="{{scene.id}}">{{scene.name}}</option>
+            {{/each}}
+        </select>
+    </div>
+
+    <div id="actor-list-container" style="margin-top: 10px;">
+        <!-- Actor checkboxes will be dynamically inserted here -->
+        <p class="notes">Please select a scene to see available actors.</p>
+    </div>
+
+    <button type="submit" name="submit" disabled>
+        <i class="fas fa-people-arrows"></i> Transfer Bonuses
+    </button>
+</form>

@@ -1,13 +1,15 @@
-/* The Main Bar Container */
 #ffg-bonus-bar {
     position: relative;
     width: 100%;
-    height: 50px;
+    /* MODIFIED: Allow height to grow for wrapping */
+    height: auto;
+    min-height: 50px;
     background-color: rgba(0, 0, 0, 0.7);
     z-index: 60;
     display: flex;
     align-items: center;
-    padding: 0 10px;
+    /* MODIFIED: Add vertical padding */
+    padding: 5px 10px;
     box-sizing: border-box;
     pointer-events: auto;
     border-top: 1px solid #333;
@@ -29,13 +31,25 @@
     pointer-events: auto;
 }
 
+/* Make images clickable for players if setting is enabled */
+#ffg-bonus-bar.players-can-pass .token-image,
+#ffg-bonus-bar.players-can-pass .generic-label {
+    cursor: pointer;
+}
+#ffg-bonus-bar.players-can-pass .token-image:hover,
+#ffg-bonus-bar.players-can-pass .generic-label:hover {
+    filter: brightness(1.2);
+}
+
+
 .ffg-bar-actor-list {
     display: flex;
     flex: 1;
-    gap: 15px;
-    overflow-x: auto;
+    /* MODIFIED: Changed gap and enabled wrapping */
+    gap: 10px;
+    flex-wrap: wrap;
     align-items: center;
-    height: 100%;
+    height: auto;
 }
 
 .ffg-bar-item {
@@ -149,6 +163,15 @@
     -webkit-text-stroke: 1px white;
 }
 
+.die-wrapper .dietype.proficiency + .die-value {
+    color: black;
+    text-shadow:
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+}
+
 /* --- Upgrade Die '+' indicator --- */
 .die-wrapper .dietype.upgrade-die::after {
     content: "+";
@@ -236,7 +259,6 @@
 
 /* Dice Selector Dialog */
 .ffg-dice-selector-dialog .form-group { margin-bottom: 1rem; }
-/* Style the H3 headers for "Dice" and "Symbols" */
 .ffg-dice-selector-dialog h3 {
     font-weight: bold;
     border-bottom: 1px solid #ccc;
@@ -244,20 +266,46 @@
     margin-bottom: 0.5rem;
     font-size: 1.1em;
 }
-/* This container ensures checkbox rows are stacked vertically. */
 .ffg-dice-selector-dialog .form-fields {
     display: flex;
     flex-direction: column!important;
-    align-items: flex-start!important; /* Aligns all checkbox rows to the left */
+    align-items: flex-start!important;
 }
-/* Each checkbox row aligns its contents (checkbox, icon, text) horizontally. */
+
+/* UPDATED: Styles for Dice Selector rows with visibility toggle */
+.ffg-dice-selector-dialog .form-fields-header {
+    display: flex;
+    justify-content: flex-end;
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #555;
+    padding: 0 8px 4px 0;
+    border-bottom: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
+}
 .ffg-dice-selector-dialog label.checkbox {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 5px; /* Vertical space between rows */
+    margin-bottom: 5px;
+    justify-content: space-between;
+    width: 100%;
+    padding: 2px 0;
+}
+.ffg-dice-selector-dialog .die-and-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
 }
 .ffg-dice-selector-dialog input[type="checkbox"] { margin: 0; flex: 0 0 auto; }
+.ffg-dice-selector-dialog .visibility-toggle {
+    cursor: pointer;
+    color: #666;
+    margin-right: 20px;
+}
+.ffg-dice-selector-dialog .visibility-toggle:hover { color: #111; }
 .ffg-dice-selector-dialog button[type="submit"] { width: 100%; margin-top: 1rem; }
 
 

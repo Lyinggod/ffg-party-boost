@@ -19,6 +19,18 @@ export const ALL_BONUS_TYPES = {
     despair: true,
 };
 
+// Helper to generate the default visibility settings object
+function getDefaultVisibility() {
+    const defaults = {};
+    for (const key of Object.keys(ALL_BONUS_TYPES)) {
+        defaults[key] = {
+            enabled: true,
+            visibleToPlayers: true,
+        };
+    }
+    return defaults;
+}
+
 
 export function registerSettings() {
     // 1. Position of the bar (Top/Bottom)
@@ -50,7 +62,7 @@ export function registerSettings() {
             if (ui.ffgBonusBar) ui.ffgBonusBar.render();
         }
     });
-
+    
     // NEW: Setting to allow players to pass bonuses
     game.settings.register(MODULE_ID, "playersCanPassBonuses", {
         name: "FFGPartyBoost.Settings.PlayersPassBonuses.Name",
@@ -59,18 +71,12 @@ export function registerSettings() {
         config: true,
         type: Boolean,
         default: false,
-    });
-
-    // 3. The Data Store (Hidden)
-    game.settings.register(MODULE_ID, "trackedActors", {
-        scope: "world",
-        config: false,
-        type: Object,
-        default: {},
         onChange: () => {
             if (ui.ffgBonusBar) ui.ffgBonusBar.render();
         }
     });
+
+    // NOTE: The 'trackedActors' setting has been removed and is now managed per-scene via flags.
 
     // 4. Button to launch Dice Selector
     game.settings.registerMenu(MODULE_ID, "diceVisibilityMenu", {
@@ -82,19 +88,11 @@ export function registerSettings() {
         restricted: true
     });
 
-    // 5. The Dice Visibility Data Store (Hidden)
+    // 5. The Dice Visibility Data Store (Hidden) - UPDATED STRUCTURE
     game.settings.register(MODULE_ID, "editorVisibleDice", {
         scope: "world",
         config: false,
         type: Object,
-        default: ALL_BONUS_TYPES,
-    });
-
-    // NEW: The PC Dice Visibility Data Store (Hidden)
-    game.settings.register(MODULE_ID, "pcVisibleDice", {
-        scope: "world",
-        config: false,
-        type: Object,
-        default: ALL_BONUS_TYPES,
+        default: getDefaultVisibility(),
     });
 }

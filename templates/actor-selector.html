@@ -1,0 +1,44 @@
+<form class="ffg-actor-selector">
+    <div style="padding-bottom: 5px; margin-bottom: 5px; border-bottom: 1px solid #ccc;">
+        <button type="button" class="transfer-btn" style="width: 100%;">
+            <i class="fas fa-people-arrows"></i> Transfer Actors from Scene
+        </button>
+    </div>
+    <div class="scrollable" style="max-height: 400px; overflow-y: auto;">
+
+        <h3 class="group-header">Actors on Canvas</h3>
+        {{#if hasCanvasTokens}}
+            {{#each canvasGroups as |group|}}
+                {{#if group.actors.length}}
+                <div class="actor-group">
+                    <div class="group-header">{{group.label}}</div>
+                    {{#each group.actors as |actor|}}
+                    <div class="actor-row">
+                        <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                        <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                    </div>
+                    {{/each}}
+                </div>
+                {{/if}}
+            {{/each}}
+        {{else}}
+            <p style="text-align: center; color: #555; margin-bottom: 10px;"><i>No tokens on the current canvas.</i></p>
+        {{/if}}
+
+        <h3 class="group-header" style="margin-top: 10px;">Actors in Sidebar</h3>
+        {{#each sidebarGroups as |group|}}
+            {{#if group.actors.length}}
+            <details class="actor-group">
+                <summary class="group-header">{{group.label}}</summary>
+                {{#each group.actors as |actor|}}
+                <div class="actor-row">
+                    <label><input type="checkbox" name="track" value="{{actor.id}}" {{checked actor.tracked}}> {{actor.name}}</label>
+                    <a class="visibility-toggle" data-actor-id="{{actor.id}}"><i class="fas {{#if actor.hidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+                </div>
+                {{/each}}
+            </details>
+            {{/if}}
+        {{/each}}
+    </div>
+    <button type="submit"><i class="fas fa-save"></i> {{localize "FFGPartyBoost.Selector.Save"}}</button>
+</form>

@@ -1,21 +1,45 @@
 import { MODULE_ID, ALL_BONUS_TYPES } from "./settings.js";
 
+/**
+ * Helper function to safely get the tracked actors for a given scene.
+ * It ensures the flag exists and that generic PC/NPC entries are present.
+ * @param {Scene} scene - The scene document to get flags from.
+ * @returns {Promise<object>} A deep clone of the tracked actors object.
+ */
+export async function getSceneTrackedActors(scene) {
+    if (!scene) return { 'generic-pc': { resources: {} }, 'generic-npc': { resources: {} } };
+    
+    let actors = scene.getFlag(MODULE_ID, "trackedActors");
+
+    if (!actors || typeof actors !== 'object') {
+        actors = {};
+    }
+    
+    // Ensure generics always exist
+    if (!actors['generic-pc']) actors['generic-pc'] = { resources: {} };
+    if (!actors['generic-npc']) actors['generic-npc'] = { resources: {} };
+
+    return foundry.utils.deepClone(actors);
+}
+
+
 // --- 1. The Main Bar UI ---
 export class BonusBar extends Application {
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "ffg-bonus-bar",
-            template: `modules/${MODULE_ID}/templates/bonus-bar.hbs`,
+            template: `modules/${MODULE_ID}/templates/bonus-bar.html`,
             popOut: false
         });
     }
 
     async getData() {
         const position = game.settings.get(MODULE_ID, "barPosition");
-        const trackedData = game.settings.get(MODULE_ID, "trackedActors");
-        const maskNPCs = game.settings.get(MODULE_ID, "showNPCBonuses");
+        const trackedData = await getSceneTrackedActors(canvas.scene);
+        const maskNPCs = !game.settings.get(MODULE_ID, "showNPCBonuses");
         const isGM = game.user.isGM;
         const tooltipDirection = position === "bottom" ? "UP" : "DOWN";
+        const playersCanPass = game.settings.get(MODULE_ID, "playersCanPassBonuses");
 
         const actors = [];
         
@@ -41,58 +65,35 @@ export class BonusBar extends Application {
             return arr;
         };
         
-        // Generic PC
-        const pcData = trackedData["generic-pc"] || {};
-        const pcRes = buildResArray(pcData.resources || {});
-        actors.push({
-            id: "generic-pc",
-            name: "PC",
-            isGeneric: true,
-            shouldRender: true,
-            resources: pcRes
-        });
-
-        // Generic NPC
-        const hideNPCs = (!isGM && maskNPCs);
-        if (isGM || !hideNPCs) {
-            const npcData = trackedData["generic-npc"] || {};
-            const npcRes = buildResArray(npcData.resources || {});
-            actors.push({
-                id: "generic-npc",
-                name: "NPC",
-                isGeneric: true,
-                shouldRender: true,
-                resources: npcRes
-            });
-        }
-
-        // Specific Actors
         for (const [id, data] of Object.entries(trackedData)) {
-            if (id === "generic-pc" || id === "generic-npc") continue; 
+            let item = { id, resources: buildResArray(data.resources || {}), shouldRender: true };
 
-            const actor = game.actors.get(id);
-            if (!actor) continue;
-
-            if (data.hidden && !isGM) continue;
-            if (actor.type !== "character" && hideNPCs) continue;
-
-            const tokenImg = actor.prototypeToken?.texture?.src;
-            const actorImg = actor.img;
-            const displayImg = (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : actorImg;
-            
-            const resources = buildResArray(data.resources || {});
-
-            actors.push({
-                id: actor.id,
-                name: actor.name,
-                img: displayImg,
-                shouldRender: true,
-                isGeneric: false,
-                resources: resources
-            });
+            if (id === 'generic-pc') {
+                item.name = 'PC';
+                item.isGeneric = true;
+            } else if (id === 'generic-npc') {
+                item.name = 'NPC';
+                item.isGeneric = true;
+                if (maskNPCs && !isGM) item.shouldRender = false;
+            } else {
+                const actor = game.actors.get(id);
+                if (!actor) {
+                    item.shouldRender = false;
+                } else {
+                    if (data.hidden && !isGM) item.shouldRender = false;
+                    if (actor.type !== "character" && maskNPCs && !isGM) item.shouldRender = false;
+                    
+                    const tokenImg = actor.prototypeToken?.texture?.src;
+                    const actorImg = actor.img;
+                    item.name = actor.name;
+                    item.img = (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : actorImg;
+                    item.isGeneric = false;
+                }
+            }
+            if (item.shouldRender) actors.push(item);
         }
 
-        return { position, actors, isGM, tooltipDirection };
+        return { position, actors, isGM, tooltipDirection, playersCanPass };
     }
 
     async _render(force, options) {
@@ -110,7 +111,9 @@ export class BonusBar extends Application {
         html.find(".config-btn").click(ev => {
             new ActorSelector().render(true);
         });
-        if (game.user.isGM) {
+
+        const canOpenEditor = game.user.isGM || game.settings.get(MODULE_ID, "playersCanPassBonuses");
+        if (canOpenEditor) {
             html.find(".token-image, .generic-label").click(ev => {
                 const actorId = ev.currentTarget.closest(".ffg-bar-item").dataset.actorId;
                 new ResourceEditor(actorId).render(true);
@@ -125,81 +128,85 @@ export class ActorSelector extends FormApplication {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "ffg-actor-selector",
             title: game.i18n.localize("FFGPartyBoost.Selector.Title"),
-            template: `modules/${MODULE_ID}/templates/actor-selector.hbs`,
+            template: `modules/${MODULE_ID}/templates/actor-selector.html`,
             width: 400,
             height: "auto"
         });
     }
 
-    getData() {
-        const trackedData = game.settings.get(MODULE_ID, "trackedActors");
-        
-        const groups = {
+    async getData() {
+        const trackedData = await getSceneTrackedActors(canvas.scene);
+
+        const createGroupTemplate = () => ({
             players: { label: game.i18n.localize("FFGPartyBoost.Selector.Groups.Players"), actors: [] },
             nemesis: { label: game.i18n.localize("FFGPartyBoost.Selector.Groups.Nemesis"), actors: [] },
             rival: { label: game.i18n.localize("FFGPartyBoost.Selector.Groups.Rival"), actors: [] },
             minion: { label: game.i18n.localize("FFGPartyBoost.Selector.Groups.Minion"), actors: [] },
             vehicle: { label: game.i18n.localize("FFGPartyBoost.Selector.Groups.Vehicle"), actors: [] }
-        };
-
-        game.actors.forEach(a => {
-            const isTracked = a.id in trackedData;
-            const isHidden = isTracked ? trackedData[a.id].hidden : false;
-            const entry = { id: a.id, name: a.name, tracked: isTracked, hidden: isHidden };
-
-            if (a.hasPlayerOwner) {
-                groups.players.actors.push(entry);
-            } else {
-                switch (a.type) {
-                    case "nemesis":
-                        groups.nemesis.actors.push(entry);
-                        break;
-                    case "rival":
-                        groups.rival.actors.push(entry);
-                        break;
-                    case "minion":
-                        groups.minion.actors.push(entry);
-                        break;
-                    case "vehicle":
-                        groups.vehicle.actors.push(entry);
-                        break;
-                }
-            }
         });
 
-        return { groups };
+        const canvasGroups = createGroupTemplate();
+        const sidebarGroups = createGroupTemplate();
+        const canvasActorIds = new Set();
+        const canvasTokens = canvas.tokens?.placeables ?? [];
+
+        for (const token of canvasTokens) {
+            const actor = token.actor;
+            if (!actor || actor.type === 'homestead') continue;
+            canvasActorIds.add(actor.id);
+            const isTracked = actor.id in trackedData;
+            const isHidden = isTracked ? trackedData[actor.id]?.hidden : false;
+            const entry = { id: actor.id, name: token.name, tracked: isTracked, hidden: isHidden };
+            let targetGroup = actor.hasPlayerOwner ? canvasGroups.players : canvasGroups[actor.type];
+            if (targetGroup) targetGroup.actors.push(entry);
+        }
+
+        for (const actor of game.actors) {
+            if (canvasActorIds.has(actor.id) || actor.type === 'homestead') continue;
+            const isTracked = actor.id in trackedData;
+            const isHidden = isTracked ? trackedData[actor.id]?.hidden : false;
+            const entry = { id: actor.id, name: actor.name, tracked: isTracked, hidden: isHidden };
+            let targetGroup = actor.hasPlayerOwner ? sidebarGroups.players : sidebarGroups[actor.type];
+            if (targetGroup) targetGroup.actors.push(entry);
+        }
+
+        return {
+            canvasGroups,
+            sidebarGroups,
+            hasCanvasTokens: canvasTokens.length > 0
+        };
     }
 
     activateListeners(html) {
         super.activateListeners(html);
         html.find(".visibility-toggle").click(ev => {
             const icon = $(ev.currentTarget).find("i");
-            if (icon.hasClass("fa-eye")) {
-                icon.removeClass("fa-eye").addClass("fa-eye-slash");
-            } else {
-                icon.removeClass("fa-eye-slash").addClass("fa-eye");
-            }
+            icon.toggleClass("fa-eye fa-eye-slash");
+        });
+        html.find(".transfer-btn").click(ev => {
+            new TransferActorsDialog().render(true);
         });
     }
 
     async _updateObject(event, formData) {
-        const newData = {};
-        const currentData = game.settings.get(MODULE_ID, "trackedActors");
-        
-        if (currentData["generic-pc"]) newData["generic-pc"] = currentData["generic-pc"];
-        if (currentData["generic-npc"]) newData["generic-npc"] = currentData["generic-npc"];
+        if (!canvas.scene) return;
+        const currentData = await getSceneTrackedActors(canvas.scene);
+        const newData = {
+            'generic-pc': currentData['generic-pc'],
+            'generic-npc': currentData['generic-npc']
+        };
 
         let trackedIds = formData.track || [];
         if (!Array.isArray(trackedIds)) trackedIds = [trackedIds];
-        const form = $(event.currentTarget);
+        const form = this.form;
         
         for (const id of trackedIds) {
             const existingRes = currentData[id]?.resources || {};
-            const eyeBtn = form.find(`.visibility-toggle[data-actor-id="${id}"]`);
-            const isHidden = eyeBtn.find("i").hasClass("fa-eye-slash");
+            const eyeBtn = form.querySelector(`.visibility-toggle[data-actor-id="${id}"] i`);
+            const isHidden = eyeBtn ? eyeBtn.classList.contains("fa-eye-slash") : false;
             newData[id] = { hidden: isHidden, resources: existingRes };
         }
-        await game.settings.set(MODULE_ID, "trackedActors", newData);
+        await canvas.scene.setFlag(MODULE_ID, "trackedActors", newData);
     }
 }
 
@@ -208,12 +215,13 @@ export class ResourceEditor extends FormApplication {
     constructor(actorId) {
         super();
         this.actorId = actorId;
+        this.isPlayerPassing = !game.user.isGM && game.settings.get(MODULE_ID, 'playersCanPassBonuses');
     }
 
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "ffg-resource-editor",
-            template: `modules/${MODULE_ID}/templates/resource-editor.hbs`,
+            template: `modules/${MODULE_ID}/templates/resource-editor.html`,
             width: 350,
             height: "auto"
         });
@@ -223,15 +231,12 @@ export class ResourceEditor extends FormApplication {
         let name = "";
         if (this.actorId === "generic-pc") name = "PC";
         else if (this.actorId === "generic-npc") name = "NPC";
-        else {
-            const actor = game.actors.get(this.actorId);
-            name = actor ? actor.name : "Unknown";
-        }
+        else name = game.actors.get(this.actorId)?.name ?? "Unknown";
         return game.i18n.format("FFGPartyBoost.Editor.Title", { name: name });
     }
 
-    getData() {
-        const allData = game.settings.get(MODULE_ID, "trackedActors");
+    async getData() {
+        const allData = await getSceneTrackedActors(canvas.scene);
         const visibleDice = game.settings.get(MODULE_ID, "editorVisibleDice");
         const actorData = allData[this.actorId] || {};
         const res = actorData.resources || {};
@@ -240,7 +245,7 @@ export class ResourceEditor extends FormApplication {
             const upgradeHtml = isUpgrade ? '<span class="upgrade-plus">+</span>' : '';
             return {
                 name: game.i18n.localize(labelKey),
-                value: res[key] || 0,
+                value: this.isPlayerPassing ? 0 : (res[key] || 0),
                 key: key,
                 labelHtml: `<span class="dietype ${type} ${css}">${char}${upgradeHtml}</span>`
             }
@@ -248,24 +253,33 @@ export class ResourceEditor extends FormApplication {
 
         const dice = {};
         const symbols = {};
-
-        if (visibleDice.boost) dice.boost = mkDie("boost", "FFGPartyBoost.Editor.Dice.Boost", "starwars", "b", "boost");
-        if (visibleDice.setback) dice.setback = mkDie("setback", "FFGPartyBoost.Editor.Dice.Setback", "starwars", "b", "setback");
-        if (visibleDice.ability) dice.ability = mkDie("ability", "FFGPartyBoost.Editor.Dice.Ability", "starwars", "d", "ability");
-        if (visibleDice.difficulty) dice.difficulty = mkDie("difficulty", "FFGPartyBoost.Editor.Dice.Difficulty", "starwars", "d", "difficulty");
-        if (visibleDice.proficiency) dice.proficiency = mkDie("proficiency", "FFGPartyBoost.Editor.Dice.Proficiency", "starwars", "c", "proficiency");
-        if (visibleDice.challenge) dice.challenge = mkDie("challenge", "FFGPartyBoost.Editor.Dice.Challenge", "starwars", "c", "challenge");
-        if (visibleDice.upgradeSkill) dice.upgradeSkill = mkDie("upgradeSkill", "FFGPartyBoost.Editor.Dice.UpgradeSkill", "starwars", "c", "proficiency", true);
-        if (visibleDice.upgradeDifficulty) dice.upgradeDifficulty = mkDie("upgradeDifficulty", "FFGPartyBoost.Editor.Dice.UpgradeDifficulty", "starwars", "c", "challenge", true);
         
-        if (visibleDice.success) symbols.success = mkDie("success", "FFGPartyBoost.Editor.Symbols.Success", "genesys", "s", "success");
-        if (visibleDice.failure) symbols.failure = mkDie("failure", "FFGPartyBoost.Editor.Symbols.Failure", "genesys", "f", "failure");
-        if (visibleDice.advantage) symbols.advantage = mkDie("advantage", "FFGPartyBoost.Editor.Symbols.Advantage", "genesys", "a", "advantage");
-        if (visibleDice.threat) symbols.threat = mkDie("threat", "FFGPartyBoost.Editor.Symbols.Threat", "genesys", "h", "threat");
-        if (visibleDice.triumph) symbols.triumph = mkDie("triumph", "FFGPartyBoost.Editor.Symbols.Triumph", "genesys", "t", "triumph");
-        if (visibleDice.despair) symbols.despair = mkDie("despair", "FFGPartyBoost.Editor.Symbols.Despair", "genesys", "d", "despair");
+        const diceTypes = {
+            boost: ["FFGPartyBoost.Editor.Dice.Boost", "starwars", "b", "boost", false, dice],
+            setback: ["FFGPartyBoost.Editor.Dice.Setback", "starwars", "b", "setback", false, dice],
+            ability: ["FFGPartyBoost.Editor.Dice.Ability", "starwars", "d", "ability", false, dice],
+            difficulty: ["FFGPartyBoost.Editor.Dice.Difficulty", "starwars", "d", "difficulty", false, dice],
+            proficiency: ["FFGPartyBoost.Editor.Dice.Proficiency", "starwars", "c", "proficiency", false, dice],
+            challenge: ["FFGPartyBoost.Editor.Dice.Challenge", "starwars", "c", "challenge", false, dice],
+            upgradeSkill: ["FFGPartyBoost.Editor.Dice.UpgradeSkill", "starwars", "c", "proficiency", true, dice],
+            upgradeDifficulty: ["FFGPartyBoost.Editor.Dice.UpgradeDifficulty", "starwars", "c", "challenge", true, dice],
+            success: ["FFGPartyBoost.Editor.Symbols.Success", "genesys", "s", "success", false, symbols],
+            failure: ["FFGPartyBoost.Editor.Symbols.Failure", "genesys", "f", "failure", false, symbols],
+            advantage: ["FFGPartyBoost.Editor.Symbols.Advantage", "genesys", "a", "advantage", false, symbols],
+            threat: ["FFGPartyBoost.Editor.Symbols.Threat", "genesys", "h", "threat", false, symbols],
+            triumph: ["FFGPartyBoost.Editor.Symbols.Triumph", "genesys", "t", "triumph", false, symbols],
+            despair: ["FFGPartyBoost.Editor.Symbols.Despair", "genesys", "d", "despair", false, symbols],
+        };
 
-        return { dice, symbols };
+        for (const [key, args] of Object.entries(diceTypes)) {
+            const dieConfig = visibleDice[key];
+            if (!dieConfig?.enabled) continue;
+            if (this.isPlayerPassing && !dieConfig.visibleToPlayers) continue;
+            const targetSection = args[5];
+            targetSection[key] = mkDie(key, ...args.slice(0, 5));
+        }
+
+        return { dice, symbols, isPlayerPassing: this.isPlayerPassing };
     }
 
     activateListeners(html) {
@@ -273,30 +287,57 @@ export class ResourceEditor extends FormApplication {
         html.find("button[data-action]").click(ev => {
             const btn = ev.currentTarget;
             const action = btn.dataset.action;
-            const row = $(btn).closest(".controls");
-            const valSpan = row.find(".value");
-            let val = parseInt(valSpan.text());
-            if (action === "increase") val++;
-            if (action === "decrease" && val > 0) val--;
-            valSpan.text(val);
+            if (this.isPlayerPassing && action === "decrease") return;
+            const valSpan = btn.closest(".controls").querySelector(".value");
+            let val = parseInt(valSpan.textContent);
+            if (action === "increase") {
+                val++;
+            } else if (action === "decrease" && val > 0) {
+                val--;
+            }
+            valSpan.textContent = val;
         });
     }
 
     async _updateObject(event, formData) {
-        const html = $(this.element);
-        const newResources = {};
-        html.find(".controls").each((i, el) => {
-            const buttonElement = $(el).find("button").first().get(0);
-            if (buttonElement) {
-                const key = buttonElement.dataset.key;
-                const val = parseInt($(el).find(".value").text());
-                if (key && val > 0) newResources[key] = val;
+        if (!canvas.scene) return;
+
+        // This object will be built from the values in the form.
+        const newValues = {};
+        for (const row of this.form.querySelectorAll(".resource-row")) {
+            const key = row.querySelector("[data-key]")?.dataset.key;
+            if (key) {
+                const val = parseInt(row.querySelector(".value").textContent);
+                // Only store values greater than 0.
+                if (val > 0) {
+                    newValues[key] = val;
+                }
             }
-        });
-        const allData = game.settings.get(MODULE_ID, "trackedActors");
-        if (!allData[this.actorId]) allData[this.actorId] = {};
-        allData[this.actorId].resources = newResources;
-        await game.settings.set(MODULE_ID, "trackedActors", allData);
+        }
+
+        if (this.isPlayerPassing) {
+            // Player mode: If there are no values to add, do nothing.
+            if (Object.keys(newValues).length === 0) return;
+
+            // Emit a socket event to the GM to ADD these values.
+            game.socket.emit(`module.${MODULE_ID}`, {
+                type: "addBonuses",
+                payload: {
+                    sceneId: canvas.scene.id,
+                    actorId: this.actorId,
+                    resourcesToAdd: newValues,
+                },
+            });
+            ui.notifications.info("Request to add bonuses sent to the GM.");
+
+        } else {
+            // GM mode: REPLACE the actor's resources with the new set of values.
+            const allData = await getSceneTrackedActors(canvas.scene);
+            if (!allData[this.actorId]) allData[this.actorId] = { resources: {} };
+            
+            allData[this.actorId].resources = newValues; // This correctly removes any resources set to 0.
+            await canvas.scene.setFlag(MODULE_ID, "trackedActors", allData);
+        }
     }
 }
 
@@ -306,31 +347,22 @@ export class DiceSelector extends FormApplication {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "ffg-dice-selector",
             title: game.i18n.localize("FFGPartyBoost.Settings.DiceSelector.Title"),
-            template: `modules/${MODULE_ID}/templates/dice-selector.hbs`,
-            width: 400,
+            template: `modules/${MODULE_ID}/templates/dice-selector.html`,
+            width: 450,
             height: "auto",
             classes: ["ffg-dice-selector-dialog"]
         });
     }
 
     getData() {
-        const visibleDice = game.settings.get(MODULE_ID, "editorVisibleDice");
-        
+        const visibleDiceSettings = game.settings.get(MODULE_ID, "editorVisibleDice");
         const mkDie = (key, labelKey, type, char, css, isUpgrade = false) => {
-            return {
-                name: game.i18n.localize(labelKey),
-                checked: !!visibleDice[key],
-                type: type,
-                css: css,
-                char: char,
-                isUpgrade: isUpgrade,
-            };
+            const dieConfig = visibleDiceSettings[key] || { enabled: true, visibleToPlayers: true };
+            return { name: game.i18n.localize(labelKey), checked: dieConfig.enabled, visibleToPlayers: dieConfig.visibleToPlayers, type, css, char, isUpgrade };
         };
-
-        const bonusTypes = {
-            dice: {
-                label: game.i18n.localize("FFGPartyBoost.Editor.Headers.Dice"),
-                items: {
+        return {
+            bonusTypes: {
+                dice: { label: "Dice", items: {
                     boost: mkDie("boost", "FFGPartyBoost.Editor.Dice.Boost", "starwars", "b", "boost"),
                     setback: mkDie("setback", "FFGPartyBoost.Editor.Dice.Setback", "starwars", "b", "setback"),
                     ability: mkDie("ability", "FFGPartyBoost.Editor.Dice.Ability", "starwars", "d", "ability"),
@@ -338,30 +370,140 @@ export class DiceSelector extends FormApplication {
                     proficiency: mkDie("proficiency", "FFGPartyBoost.Editor.Dice.Proficiency", "starwars", "c", "proficiency"),
                     challenge: mkDie("challenge", "FFGPartyBoost.Editor.Dice.Challenge", "starwars", "c", "challenge"),
                     upgradeSkill: mkDie("upgradeSkill", "FFGPartyBoost.Editor.Dice.UpgradeSkill", "starwars", "c", "proficiency", true),
-                    upgradeDifficulty: mkDie("upgradeDifficulty", "FFGPartyBoost.Editor.Dice.UpgradeDifficulty", "starwars", "c", "challenge", true)
-                }
-            },
-            symbols: {
-                label: game.i18n.localize("FFGPartyBoost.Editor.Headers.Symbols"),
-                items: {
+                    upgradeDifficulty: mkDie("upgradeDifficulty", "FFGPartyBoost.Editor.Dice.UpgradeDifficulty", "starwars", "c", "challenge", true),
+                }},
+                symbols: { label: "Symbols", items: {
                     success: mkDie("success", "FFGPartyBoost.Editor.Symbols.Success", "genesys", "s", "success"),
                     failure: mkDie("failure", "FFGPartyBoost.Editor.Symbols.Failure", "genesys", "f", "failure"),
                     advantage: mkDie("advantage", "FFGPartyBoost.Editor.Symbols.Advantage", "genesys", "a", "advantage"),
                     threat: mkDie("threat", "FFGPartyBoost.Editor.Symbols.Threat", "genesys", "h", "threat"),
                     triumph: mkDie("triumph", "FFGPartyBoost.Editor.Symbols.Triumph", "genesys", "t", "triumph"),
-                    despair: mkDie("despair", "FFGPartyBoost.Editor.Symbols.Despair", "genesys", "d", "despair")
-                }
+                    despair: mkDie("despair", "FFGPartyBoost.Editor.Symbols.Despair", "genesys", "d", "despair"),
+                }}
             }
         };
+    }
 
-        return { bonusTypes };
+    activateListeners(html) {
+        super.activateListeners(html);
+        html.find('.visibility-toggle').click(ev => {
+            const icon = ev.currentTarget.querySelector('i');
+            const hiddenInput = ev.currentTarget.closest('label').querySelector('input[type="hidden"]');
+            const isVisible = icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash', !isVisible);
+            hiddenInput.value = isVisible;
+        });
     }
     
     async _updateObject(event, formData) {
         const newSettings = {};
         for (const key of Object.keys(ALL_BONUS_TYPES)) {
-            newSettings[key] = formData[key] || false;
+            newSettings[key] = { enabled: formData[key] || false, visibleToPlayers: formData[`${key}-visible`] === 'true' };
         }
         await game.settings.set(MODULE_ID, "editorVisibleDice", newSettings);
+    }
+}
+
+// --- 5. NEW: Transfer Actors Dialog ---
+class TransferActorsDialog extends FormApplication {
+    constructor(options = {}) {
+        super(options);
+        this.sourceActors = {};
+    }
+
+    static get defaultOptions() {
+        return foundry.utils.mergeObject(super.defaultOptions, {
+            id: "ffg-transfer-actors",
+            title: "Transfer Actors from Scene",
+            template: `modules/${MODULE_ID}/templates/transfer-actors.html`,
+            width: 400,
+            height: "auto",
+        });
+    }
+
+    getData() {
+        const scenes = game.scenes.filter(s => s.id !== canvas.scene?.id);
+        return { scenes };
+    }
+
+    activateListeners(html) {
+        super.activateListeners(html);
+        html.find('select[name="sceneId"]').on('change', this._onSceneChange.bind(this));
+    }
+
+    async _onSceneChange(event) {
+        const sceneId = event.currentTarget.value;
+        const container = this.form.querySelector("#actor-list-container");
+        const submitButton = this.form.querySelector('button[type="submit"]');
+        
+        if (!sceneId) {
+            container.innerHTML = `<p class="notes">Please select a scene to see available actors.</p>`;
+            this.sourceActors = {};
+            submitButton.disabled = true;
+            return;
+        }
+
+        const sourceScene = game.scenes.get(sceneId);
+        this.sourceActors = await getSceneTrackedActors(sourceScene);
+        
+        let actorListHtml = '';
+        const actorEntries = Object.entries(this.sourceActors);
+
+        if (actorEntries.length === 0 || actorEntries.every(([key, val]) => Object.keys(val.resources || {}).length === 0)) {
+            container.innerHTML = `<p class="notes">The selected scene has no actors with bonuses in its bonus bar.</p>`;
+            submitButton.disabled = true;
+            return;
+        }
+        
+        // Handle generics first
+        const generics = {
+            'generic-pc': 'PC',
+            'generic-npc': 'NPC'
+        };
+        for (const [id, name] of Object.entries(generics)) {
+            if (this.sourceActors[id]) {
+                actorListHtml += `
+                    <div class="form-group">
+                        <label class="checkbox">
+                            <input type="checkbox" name="${id}" checked /> ${name}
+                        </label>
+                    </div>`;
+            }
+        }
+
+        for (const [id, data] of actorEntries) {
+            if (id.startsWith('generic-')) continue;
+            const actor = game.actors.get(id);
+            if (actor) {
+                 actorListHtml += `
+                    <div class="form-group">
+                        <label class="checkbox">
+                            <input type="checkbox" name="${id}" checked /> ${actor.name}
+                        </label>
+                    </div>`;
+            }
+        }
+        
+        container.innerHTML = actorListHtml;
+        submitButton.disabled = false;
+        this.setPosition(); // Recenter dialog
+    }
+
+    async _updateObject(event, formData) {
+        if (!canvas.scene) return;
+
+        const currentSceneActors = await getSceneTrackedActors(canvas.scene);
+        
+        for (const [id, isChecked] of Object.entries(formData)) {
+            if (!isChecked || id === "sceneId") continue;
+
+            // If the source has the actor, copy it over.
+            if (this.sourceActors[id]) {
+                currentSceneActors[id] = this.sourceActors[id];
+            }
+        }
+
+        await canvas.scene.setFlag(MODULE_ID, "trackedActors", currentSceneActors);
+        ui.notifications.info("Actor bonuses transferred successfully to the current scene.");
     }
 }
