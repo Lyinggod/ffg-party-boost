@@ -1,4 +1,4 @@
-FFG Party Boost is a module for Foundry VTT FFG Star Wars system, allowing GMS to track BOOSTS (and other symbols) and automatically apply them to the next actor who roles as skill check based on actor type. This includes that ability to pass on an upgrade to the next skill check or upgrade to difficulty of the next roll.
+FFG Party Boost is a module for Foundry VTT FFG Star Wars system. It allows for the managing and passing of boosts and other dice/symbols to the next actor or specific actors. This includes the ability to pass an upgrade.
 
 A "bonus" bar shows the token image (or, if missing, the main image) and the assigned bonuses. 
 
@@ -6,26 +6,21 @@ A "bonus" bar shows the token image (or, if missing, the main image) and the ass
 
 If a PC rolls, all the bonuses passed to them plus any general bonuses for their side (aka "the player that rolls") will have those values assigned to the dice roller dialog. Clicking "Roll" removes all assigned bonuses. The same applies for NPCs.
 
-Clicking the "+" allows for actors to be added to the bonus from the actors in the sidebar. The _eye_ icon will hide that actor from the player view.
+Bonuses are tracked per scene. Clicking the "+" will allows bonuses to be transfered from another scene or actors may be added to the bonus bar from the tokens on the canvas or actors in the sidebar. The _eye_ icon will hide that actor from the player view.
+
+Hovering over the image in the bonus bar will show the tokens name. **Note**: it is recommended to use the module _Token Mold_ or any module that generates unique names to non-unique differentiate minions or rivals
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/select-actors-dialog.png" width="300"/>
 
-Clicking on the actor image will show a dialog to assign bonuses.
+Clicking on the actor image will show a dialog with available bonuses. GMs may increase a decrease a bonus amount. Players may only add bonuses, not remove them. If a bonus is currently 1, the player need enter the number to be increased by.
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/edit-bonus-resources.png" width="300"/>
 
-Under _Configure Settings_ you can configure whether the players can see NPC and their bonuses as well what bonuses will be available in the "Edit Bonus Resources" dialog.
+Under _Configure Settings_ you can configure whether the players can see NPC and their bonuses as well what bonuses will be available in the "Edit Bonus Resources" dialog. Symbols and Dice can also be hidden from only the Players.
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/configure-settings.png" width="300"/>
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/configure-available-bonuses.png" width="300"/>
-
-## Installation
-
-1.  Inside Foundry VTT, go to the "Add-on Modules" tab in the Configuration and Setup screen.
-2.  Click "Install Module".
-3.  Search for "FFG Party Boost" and click "Install".
-4.  Activate the module in your game world's module settings.
 
 ## License
 This Foundry VTT module is licensed under the MIT license.
