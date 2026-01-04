@@ -22,6 +22,12 @@ Under _Configure Settings_ you can configure whether the players can see NPC and
 
 <img src="https://github.com/Lyinggod/ffg-party-boost/blob/main/images/configure-available-bonuses.png" width="300"/>
 
+## Installation
+Copy the following and paste it into the manifiest field 
+```
+https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.0.1/module.json
+```
+
 ## License
 This Foundry VTT module is licensed under the MIT license.
 
