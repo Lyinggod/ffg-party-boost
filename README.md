@@ -25,7 +25,7 @@ Under _Configure Settings_ you can configure whether the players can see NPC and
 ## Installation
 Copy the following and paste it into the manifiest field 
 ```
-https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.0.1/module.json
+https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.1.0/module.json
 ```
 
 ## License
