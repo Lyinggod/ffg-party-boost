@@ -6,9 +6,9 @@
     <div class="resource-row">
         <span class="die-label">{{{d.labelHtml}}} <span style="font-size:14px; color:#333">{{d.name}}</span></span>
         <div class="controls">
-            {{#unless isPlayerPassing}}
+            {{#if ../showDecreaseButton}}
             <button type="button" data-action="decrease" data-key="{{key}}"><i class="fas fa-minus"></i></button>
-            {{/unless}}
+            {{/if}}
             <span class="value">{{d.value}}</span>
             <button type="button" data-action="increase" data-key="{{key}}"><i class="fas fa-plus"></i></button>
         </div>
@@ -21,9 +21,9 @@
     <div class="resource-row">
         <span class="die-label">{{{s.labelHtml}}} <span style="font-size:14px; color:#333">{{s.name}}</span></span>
         <div class="controls">
-            {{#unless isPlayerPassing}}
+            {{#if ../showDecreaseButton}}
             <button type="button" data-action="decrease" data-key="{{key}}"><i class="fas fa-minus"></i></button>
-            {{/unless}}
+            {{/if}}
             <span class="value">{{s.value}}</span>
             <button type="button" data-action="increase" data-key="{{key}}"><i class="fas fa-plus"></i></button>
         </div>

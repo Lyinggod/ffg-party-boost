@@ -15,6 +15,22 @@
         "Name": "Players Pass Bonuses",
         "Hint": "Allow players to pass bonuses to other players by clicking their token in the bonus bar."
       },
+      "PlayersReduceBonuses": {
+        "Name": "Players Can Reduce Bonuses",
+        "Hint": "Allow players to decrease bonus dice/symbols from the editor. If disabled, they can only add bonuses."
+      },
+      "TooltipColor": {
+        "Name": "Name Background Color",
+        "Hint": "Enter hex color (include #) or color name to change background color of bonus bar actor tooltip."
+      },
+      "BreakNames": {
+        "Name": "Break Names on List",
+        "Hint": "Enable to break long names based on the character list below."
+      },
+      "NameBreakCharacters": {
+        "Name": "Name Break Characters",
+        "Hint": "Enter a comma-separated list of characters to replace with line breaks. Use 'space' for the space character."
+      },
       "DiceVisibility": {
         "Name": "Configure Editor Dice",
         "Hint": "Select which dice and symbols should be available to add in the bonus editor dialog.",

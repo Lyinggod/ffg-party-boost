@@ -41,6 +41,21 @@ export class BonusBar extends Application {
         const tooltipDirection = position === "bottom" ? "UP" : "DOWN";
         const playersCanPass = game.settings.get(MODULE_ID, "playersCanPassBonuses");
 
+        // --- Tooltip Color Logic ---
+        const userColor = game.settings.get(MODULE_ID, "tooltipBackgroundColor");
+        const defaultColor = "lightgrey";
+        function isValidColor(colorString) {
+            if (!colorString || typeof colorString !== 'string') return false;
+            const s = new Option().style;
+            s.color = colorString;
+            return s.color !== "";
+        }
+        const tooltipColor = isValidColor(userColor) ? userColor : defaultColor;
+
+        // --- NEW: Name Breaking Logic ---
+        const shouldBreakNames = game.settings.get(MODULE_ID, "breakLongNames");
+        const breakCharsSetting = game.settings.get(MODULE_ID, "nameBreakCharacters");
+
         const actors = [];
         
         const buildResArray = (resData) => {
@@ -90,10 +105,25 @@ export class BonusBar extends Application {
                     item.isGeneric = false;
                 }
             }
+
+            // --- Apply Name Breaking ---
+            if (item.shouldRender && shouldBreakNames && item.name && breakCharsSetting) {
+                const charsToBreak = breakCharsSetting
+                    .split(',')
+                    .map(c => c.trim().toLowerCase() === 'space' ? ' ' : c.trim())
+                    .filter(c => c);
+
+                if (charsToBreak.length > 0) {
+                    const escapedChars = charsToBreak.map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('');
+                    const regex = new RegExp(`[${escapedChars}]`, 'g');
+                    item.name = item.name.replace(regex, '<br>');
+                }
+            }
+
             if (item.shouldRender) actors.push(item);
         }
 
-        return { position, actors, isGM, tooltipDirection, playersCanPass };
+        return { position, actors, isGM, tooltipDirection, playersCanPass, tooltipColor };
     }
 
     async _render(force, options) {
@@ -119,6 +149,50 @@ export class BonusBar extends Application {
                 new ResourceEditor(actorId).render(true);
             });
         }
+
+        // --- TOOLTIP LOGIC ---
+        const allItems = html.find('.ffg-bar-item');
+        const allTooltips = html.find('.bar-item-tooltip');
+        let isCtrlDown = false;
+    
+        const keydownHandler = (e) => {
+            if (e.key === 'Control' && !isCtrlDown) {
+                isCtrlDown = true;
+                allTooltips.show();
+            }
+        };
+    
+        const keyupHandler = (e) => {
+            if (e.key === 'Control') {
+                isCtrlDown = false;
+                allTooltips.hide();
+                const currentlyHovered = allItems.filter(':hover').first();
+                if (currentlyHovered.length > 0) {
+                    currentlyHovered.find('.bar-item-tooltip').show();
+                }
+            }
+        };
+    
+        html.on('mouseenter', () => {
+            $(document).on('keydown.ffgBonusBar', keydownHandler);
+            $(document).on('keyup.ffgBonusBar', keyupHandler);
+        });
+    
+        html.on('mouseleave', () => {
+            isCtrlDown = false;
+            allTooltips.hide();
+            $(document).off('.ffgBonusBar');
+        });
+    
+        allItems.on('mouseenter', function() {
+            if (!isCtrlDown) {
+                $(this).find('.bar-item-tooltip').show();
+            }
+        }).on('mouseleave', function() {
+            if (!isCtrlDown) {
+                $(this).find('.bar-item-tooltip').hide();
+            }
+        });
     }
 }
 
@@ -215,7 +289,7 @@ export class ResourceEditor extends FormApplication {
     constructor(actorId) {
         super();
         this.actorId = actorId;
-        this.isPlayerPassing = !game.user.isGM && game.settings.get(MODULE_ID, 'playersCanPassBonuses');
+        this.originalResources = {}; // To store the state when the dialog opens
     }
 
     static get defaultOptions() {
@@ -239,13 +313,19 @@ export class ResourceEditor extends FormApplication {
         const allData = await getSceneTrackedActors(canvas.scene);
         const visibleDice = game.settings.get(MODULE_ID, "editorVisibleDice");
         const actorData = allData[this.actorId] || {};
-        const res = actorData.resources || {};
         
+        // Store the original state for calculating diffs later
+        this.originalResources = foundry.utils.deepClone(actorData.resources || {});
+        const res = this.originalResources;
+        
+        // Determine if the decrease button should be visible
+        const showDecreaseButton = game.user.isGM || game.settings.get(MODULE_ID, "playersCanReduceBonuses");
+
         const mkDie = (key, labelKey, type, char, css, isUpgrade = false) => {
             const upgradeHtml = isUpgrade ? '<span class="upgrade-plus">+</span>' : '';
             return {
                 name: game.i18n.localize(labelKey),
-                value: this.isPlayerPassing ? 0 : (res[key] || 0),
+                value: res[key] || 0,
                 key: key,
                 labelHtml: `<span class="dietype ${type} ${css}">${char}${upgradeHtml}</span>`
             }
@@ -274,12 +354,13 @@ export class ResourceEditor extends FormApplication {
         for (const [key, args] of Object.entries(diceTypes)) {
             const dieConfig = visibleDice[key];
             if (!dieConfig?.enabled) continue;
-            if (this.isPlayerPassing && !dieConfig.visibleToPlayers) continue;
+            // Players who can't edit shouldn't see dice they can't pass
+            if (!game.user.isGM && game.settings.get(MODULE_ID, 'playersCanPassBonuses') && !dieConfig.visibleToPlayers) continue;
             const targetSection = args[5];
             targetSection[key] = mkDie(key, ...args.slice(0, 5));
         }
 
-        return { dice, symbols, isPlayerPassing: this.isPlayerPassing };
+        return { dice, symbols, showDecreaseButton };
     }
 
     activateListeners(html) {
@@ -287,9 +368,9 @@ export class ResourceEditor extends FormApplication {
         html.find("button[data-action]").click(ev => {
             const btn = ev.currentTarget;
             const action = btn.dataset.action;
-            if (this.isPlayerPassing && action === "decrease") return;
             const valSpan = btn.closest(".controls").querySelector(".value");
             let val = parseInt(valSpan.textContent);
+
             if (action === "increase") {
                 val++;
             } else if (action === "decrease" && val > 0) {
@@ -301,42 +382,60 @@ export class ResourceEditor extends FormApplication {
 
     async _updateObject(event, formData) {
         if (!canvas.scene) return;
+        const isGM = game.user.isGM;
 
-        // This object will be built from the values in the form.
-        const newValues = {};
+        // Collect the final values from the form
+        const finalResources = {};
         for (const row of this.form.querySelectorAll(".resource-row")) {
             const key = row.querySelector("[data-key]")?.dataset.key;
             if (key) {
                 const val = parseInt(row.querySelector(".value").textContent);
-                // Only store values greater than 0.
-                if (val > 0) {
-                    newValues[key] = val;
+                if (val >= 0) {
+                    finalResources[key] = val;
                 }
             }
         }
 
-        if (this.isPlayerPassing) {
-            // Player mode: If there are no values to add, do nothing.
-            if (Object.keys(newValues).length === 0) return;
-
-            // Emit a socket event to the GM to ADD these values.
-            game.socket.emit(`module.${MODULE_ID}`, {
-                type: "addBonuses",
-                payload: {
-                    sceneId: canvas.scene.id,
-                    actorId: this.actorId,
-                    resourcesToAdd: newValues,
-                },
-            });
-            ui.notifications.info("Request to add bonuses sent to the GM.");
-
-        } else {
-            // GM mode: REPLACE the actor's resources with the new set of values.
+        if (isGM) {
+            // GM Mode: Replace the resources directly
             const allData = await getSceneTrackedActors(canvas.scene);
             if (!allData[this.actorId]) allData[this.actorId] = { resources: {} };
             
-            allData[this.actorId].resources = newValues; // This correctly removes any resources set to 0.
+            // Clean up any zero-value keys before saving
+            for (const key in finalResources) {
+                if (finalResources[key] === 0) {
+                    delete finalResources[key];
+                }
+            }
+            allData[this.actorId].resources = finalResources;
             await canvas.scene.setFlag(MODULE_ID, "trackedActors", allData);
+
+        } else {
+            // Player Mode: Calculate the difference from the original state and send via socket.
+            const changes = {};
+            const allKeys = new Set([...Object.keys(this.originalResources), ...Object.keys(finalResources)]);
+
+            for (const key of allKeys) {
+                const originalVal = this.originalResources[key] || 0;
+                const finalVal = finalResources[key] || 0;
+                const diff = finalVal - originalVal;
+
+                if (diff !== 0) {
+                    changes[key] = diff;
+                }
+            }
+            
+            if (Object.keys(changes).length > 0) {
+                game.socket.emit(`module.${MODULE_ID}`, {
+                    type: "addBonuses", // Use the existing socket handler which can now handle negative values
+                    payload: {
+                        sceneId: canvas.scene.id,
+                        actorId: this.actorId,
+                        resourcesToAdd: changes,
+                    },
+                });
+                ui.notifications.info("Request to change bonuses sent to the GM.");
+            }
         }
     }
 }

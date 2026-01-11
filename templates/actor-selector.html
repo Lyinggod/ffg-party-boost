@@ -40,5 +40,12 @@
             {{/if}}
         {{/each}}
     </div>
-    <button type="submit"><i class="fas fa-save"></i> {{localize "FFGPartyBoost.Selector.Save"}}</button>
+    <footer class="form-footer" style="margin-top: 10px; display: flex; justify-content: space-between;">
+        <button type="button" class="clear-bonuses-btn">
+            <i class="fas fa-trash"></i> Clear all bonus
+        </button>
+        <button type="submit">
+            <i class="fas fa-save"></i> {{localize "FFGPartyBoost.Selector.Save"}}
+        </button>
+    </footer>
 </form>

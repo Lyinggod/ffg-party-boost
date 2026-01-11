@@ -63,7 +63,7 @@ export function registerSettings() {
         }
     });
     
-    // NEW: Setting to allow players to pass bonuses
+    // 3. Setting to allow players to pass bonuses
     game.settings.register(MODULE_ID, "playersCanPassBonuses", {
         name: "FFGPartyBoost.Settings.PlayersPassBonuses.Name",
         hint: "FFGPartyBoost.Settings.PlayersPassBonuses.Hint",
@@ -76,9 +76,58 @@ export function registerSettings() {
         }
     });
 
+    // 4. Setting to allow players to reduce bonuses
+    game.settings.register(MODULE_ID, "playersCanReduceBonuses", {
+        name: "FFGPartyBoost.Settings.PlayersReduceBonuses.Name",
+        hint: "FFGPartyBoost.Settings.PlayersReduceBonuses.Hint",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+    });
+
+    // 5. Tooltip background color
+    game.settings.register(MODULE_ID, "tooltipBackgroundColor", {
+        name: "FFGPartyBoost.Settings.TooltipColor.Name",
+        hint: "FFGPartyBoost.Settings.TooltipColor.Hint",
+        scope: "world",
+        config: true,
+        type: String,
+        default: "lightgrey",
+        onChange: () => {
+            if (ui.ffgBonusBar) ui.ffgBonusBar.render();
+        }
+    });
+
+    // 6. Setting to break long names (Checkbox)
+    game.settings.register(MODULE_ID, "breakLongNames", {
+        name: "FFGPartyBoost.Settings.BreakNames.Name",
+        hint: "FFGPartyBoost.Settings.BreakNames.Hint",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false,
+        onChange: () => {
+            if (ui.ffgBonusBar) ui.ffgBonusBar.render();
+        }
+    });
+
+    // 7. Setting for characters to break on
+    game.settings.register(MODULE_ID, "nameBreakCharacters", {
+        name: "FFGPartyBoost.Settings.NameBreakCharacters.Name",
+        hint: "FFGPartyBoost.Settings.NameBreakCharacters.Hint",
+        scope: "world",
+        config: true,
+        type: String,
+        default: "space",
+        onChange: () => {
+            if (ui.ffgBonusBar) ui.ffgBonusBar.render();
+        }
+    });
+
     // NOTE: The 'trackedActors' setting has been removed and is now managed per-scene via flags.
 
-    // 4. Button to launch Dice Selector
+    // 8. Button to launch Dice Selector
     game.settings.registerMenu(MODULE_ID, "diceVisibilityMenu", {
         name: "FFGPartyBoost.Settings.DiceVisibility.Name",
         label: "FFGPartyBoost.Settings.DiceVisibility.Label",
@@ -88,7 +137,7 @@ export function registerSettings() {
         restricted: true
     });
 
-    // 5. The Dice Visibility Data Store (Hidden) - UPDATED STRUCTURE
+    // 9. The Dice Visibility Data Store (Hidden)
     game.settings.register(MODULE_ID, "editorVisibleDice", {
         scope: "world",
         config: false,

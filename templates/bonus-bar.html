@@ -6,17 +6,16 @@
                 
                 {{#if this.isGeneric}}
                     {{!-- Generic Text Label --}}
-                    <div class="generic-label"
-                         data-tooltip="{{this.name}}" 
-                         data-tooltip-direction="{{../tooltipDirection}}">
+                    <div class="generic-label">
                          {{this.name}}
                     </div>
                 {{else}}
                     {{!-- Token Image --}}
-                    <img src="{{this.img}}" class="token-image" 
-                         data-tooltip="{{this.name}}" 
-                         data-tooltip-direction="{{../tooltipDirection}}">
+                    <img src="{{this.img}}" class="token-image">
                 {{/if}}
+
+                {{!-- Tooltip for the item --}}
+                <div class="bar-item-tooltip" style="display: none; background-color: {{../tooltipColor}};">{{{this.name}}}</div>
 
                 {{!-- Resources --}}
                 {{#each this.resources as |res|}}

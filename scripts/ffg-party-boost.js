@@ -140,9 +140,17 @@ async function consumeResources(keys) {
 
     for (const key of keys) {
         if (allData[key]?.resources && Object.keys(allData[key].resources).length > 0) {
-            allData[key].resources = {}; // Clear resources
-            changed = true;
-            console.info(`FFG Party Boosts | Consumed resources for: ${key}`);
+            // *** THE FIX IS HERE ***
+            // Instead of clearing the object, iterate over its keys and set each value to 0.
+            const resources = allData[key].resources;
+            for (const resourceKey of Object.keys(resources)) {
+                if (resources[resourceKey] > 0) {
+                    resources[resourceKey] = 0;
+                    changed = true;
+                }
+            }
+            // ***********************
+            if (changed) console.info(`FFG Party Boosts | Consumed resources for: ${key}`);
         }
     }
 
