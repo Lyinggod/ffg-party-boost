@@ -52,7 +52,7 @@ export class BonusBar extends Application {
         }
         const tooltipColor = isValidColor(userColor) ? userColor : defaultColor;
 
-        // --- NEW: Name Breaking Logic ---
+        // --- Name Breaking Logic ---
         const shouldBreakNames = game.settings.get(MODULE_ID, "breakLongNames");
         const breakCharsSetting = game.settings.get(MODULE_ID, "nameBreakCharacters");
 
@@ -397,17 +397,20 @@ export class ResourceEditor extends FormApplication {
         }
 
         if (isGM) {
-            // GM Mode: Replace the resources directly
+            // GM Mode: Merge the changes directly to avoid data loss and bugs with zero-values.
             const allData = await getSceneTrackedActors(canvas.scene);
-            if (!allData[this.actorId]) allData[this.actorId] = { resources: {} };
-            
-            // Clean up any zero-value keys before saving
-            for (const key in finalResources) {
-                if (finalResources[key] === 0) {
-                    delete finalResources[key];
-                }
+            if (!allData[this.actorId]) {
+                allData[this.actorId] = { resources: {} };
             }
-            allData[this.actorId].resources = finalResources;
+            
+            // Get the actor's current resources to preserve any dice not visible in this editor.
+            const currentResources = allData[this.actorId].resources || {};
+
+            // Merge the form values. This correctly updates existing values, adds new ones,
+            // and explicitly stores zeros without deleting keys or losing other data.
+            foundry.utils.mergeObject(currentResources, finalResources);
+
+            allData[this.actorId].resources = currentResources;
             await canvas.scene.setFlag(MODULE_ID, "trackedActors", allData);
 
         } else {

@@ -1,7 +1,7 @@
 {
   "id": "ffg-party-boost",
   "title": "FFG Party Boosts & Bonus Bar",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "compatibility": {
     "minimum": "11",
     "verified": "12"
@@ -27,6 +27,6 @@
     }
   ],
   "url": "https://github.com/Lyinggod/ffg-party-boost",
-  "manifest": "https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.1.0/module.json",
-    "download": "https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.1.0/ffg-party-boost.zip"
+  "manifest": "https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.1.1/module.json",
+    "download": "https://github.com/Lyinggod/ffg-party-boost/releases/download/v1.1.1/ffg-party-boost.zip"
 }
